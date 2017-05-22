@@ -369,7 +369,8 @@ DrawingBoard.Board.defaultOpts = {
 	droppable: false,
 	enlargeYourContainer: false,
 	errorMessage: "<p>It seems you use an obsolete browser. <a href=\"http://browsehappy.com/\" target=\"_blank\">Update it</a> to start drawing.</p>",
-	stretchImg: false //when setting the canvas img, strech the image at the whole canvas size when this opt is true
+	stretchImg: false,  //when setting the canvas img, strech the image at the whole canvas size when this opt is true
+    localMouse: true //绘制数据是否由本地提供
 };
 
 
@@ -827,40 +828,71 @@ DrawingBoard.Board.prototype = {
 		this.isMouseHovering = false;
 		this.coords = {};
 		this.coords.old = this.coords.current = this.coords.oldMid = { x: 0, y: 0 };
+        if(this.opts.localMouse) {
+            this.dom.$canvas.on('mousedown touchstart', $.proxy(function(e) {
+                this._onInputStart(e, this._getInputCoords(e) );
+            }, this));
 
-		this.dom.$canvas.on('mousedown touchstart', $.proxy(function(e) {
-			this._onInputStart(e, this._getInputCoords(e) );
-		}, this));
+            this.dom.$canvas.on('mousemove touchmove', $.proxy(function(e) {
+                this._onInputMove(e, this._getInputCoords(e) );
+            }, this));
 
-		this.dom.$canvas.on('mousemove touchmove', $.proxy(function(e) {
-			this._onInputMove(e, this._getInputCoords(e) );
-		}, this));
+            this.dom.$canvas.on('mousemove', $.proxy(function(e) {
 
-		this.dom.$canvas.on('mousemove', $.proxy(function(e) {
+            }, this));
 
-		}, this));
+            this.dom.$canvas.on('mouseup touchend', $.proxy(function(e) {
+                this._onInputStop(e, this._getInputCoords(e) );
+            }, this));
 
-		this.dom.$canvas.on('mouseup touchend', $.proxy(function(e) {
-			this._onInputStop(e, this._getInputCoords(e) );
-		}, this));
+            this.dom.$canvas.on('mouseover', $.proxy(function(e) {
+                this._onMouseOver(e, this._getInputCoords(e) );
+            }, this));
 
-		this.dom.$canvas.on('mouseover', $.proxy(function(e) {
-			this._onMouseOver(e, this._getInputCoords(e) );
-		}, this));
+            this.dom.$canvas.on('mouseout', $.proxy(function(e) {
+                this._onMouseOut(e, this._getInputCoords(e) );
 
-		this.dom.$canvas.on('mouseout', $.proxy(function(e) {
-			this._onMouseOut(e, this._getInputCoords(e) );
+            }, this));
 
-		}, this));
+            $('body').on('mouseup touchend', $.proxy(function(e) {
+                this.isDrawing = false;
+            }, this));
+        }
+        else {
+                this.dom.$canvas.on('fire-mousedown-touchstart', $.proxy(function(e) {
+                this._onInputStart(e, this._getInputCoords(e) );
+            }, this));
 
-		$('body').on('mouseup touchend', $.proxy(function(e) {
-			this.isDrawing = false;
-		}, this));
+            this.dom.$canvas.on('fire-mousemove-touchmove', $.proxy(function(e) {
+                this._onInputMove(e, this._getInputCoords(e) );
+            }, this));
 
+            this.dom.$canvas.on('fire-mousemove', $.proxy(function(e) {
+
+            }, this));
+
+            this.dom.$canvas.on('fire-mouseup-touchend', $.proxy(function(e) {
+                this._onInputStop(e, this._getInputCoords(e) );
+            }, this));
+
+            this.dom.$canvas.on('fire-mouseover', $.proxy(function(e) {
+                this._onMouseOver(e, this._getInputCoords(e) );
+            }, this));
+
+            this.dom.$canvas.on('fire-mouseout', $.proxy(function(e) {
+                this._onMouseOut(e, this._getInputCoords(e) );
+
+            }, this));
+
+            $('body').on('fire-body-mouseup-touchend', $.proxy(function(e) {
+                this.isDrawing = false;
+            }, this));
+        }
 		if (window.requestAnimationFrame) requestAnimationFrame( $.proxy(this.draw, this) );
 	},
 
 	draw: function() {
+        //绘制程序
 		//if the pencil size is big (>10), the small crosshair makes a friend: a circle of the size of the pencil
 		//todo: have the circle works on every browser - it currently should be added only when CSS pointer-events are supported
 		//we assume that if requestAnimationFrame is supported, pointer-events is too, but this is terribad.
