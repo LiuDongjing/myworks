@@ -10,6 +10,7 @@ function init() {
 		size: 2,
 		background: "#fff",
 		webStorage: 'session',
-		enlargeYourContainer: true
+		enlargeYourContainer: true,
+		localMouse: false
 	});
 }
