@@ -889,15 +889,18 @@ DrawingBoard.Board.prototype = {
             }, this));
 			//setInterval(function(){
 			setTimeout(function(){
-				var e = jQuery.Event( "fire-mouseup-touchend", {which: 1, pageX:1000, pageY:800 } );
+				var e = jQuery.Event( "fire-mousedown-touchstart", {which: 1, pageX:1000, pageY:800 } );
+				e.__proto__.which = 1, e.__proto__.pageX = 1000, e.__proto__.pageY = 800;
 				var canv = $("canvas");
-				canv.trigger('fire-mouseup-touchend', e);
-				for(var x = 1000; x < 1100; x++)
-					for(var y = 800; y < 900; y++)
+				canv.trigger('fire-mousedown-touchstart', e);
+				for(var x = 1000; x <= 1100; x++)
+					for(var y = 800; y <= 900; y++)
 					{
 						e = jQuery.Event( "fire-mousemove-touchmove", {which: 1, pageX:x, pageY:y } );
 						canv.trigger('fire-mousemove-touchmove', e);
 					}
+				e = jQuery.Event( "fire-mouseup-touchend", {which: 1, pageX:1100, pageY:900 } );
+				canv.trigger('fire-mouseup-touchend', e);
 			}, 100);
         }
 		if (window.requestAnimationFrame) requestAnimationFrame( $.proxy(this.draw, this) );
