@@ -352,6 +352,12 @@ DrawingBoard.Board = function(id, opts) {
 	this.restoreWebStorage();
 	this.initDropEvents();
 	this.initDrawEvents();
+    this.eventList = [];
+    setInterval($.proxy(function(){
+        for(var i = 0; i < this.eventList.length; i++)
+            console.log(this.eventList[i]);
+        this.eventList = [];
+    }, this), 10);
 };
 
 
@@ -831,10 +837,12 @@ DrawingBoard.Board.prototype = {
         if(this.opts.localMouse) {
             this.dom.$canvas.on('mousedown touchstart', $.proxy(function(e) {
                 this._onInputStart(e, this._getInputCoords(e) );
+                this.eventList.push({type:'fire-mousedown-touchstart', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mousemove touchmove', $.proxy(function(e) {
                 this._onInputMove(e, this._getInputCoords(e) );
+                this.eventList.push({type:'fire-mousemove-touchmove', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mousemove', $.proxy(function(e) {
@@ -843,19 +851,22 @@ DrawingBoard.Board.prototype = {
 
             this.dom.$canvas.on('mouseup touchend', $.proxy(function(e) {
                 this._onInputStop(e, this._getInputCoords(e) );
+                this.eventList.push({type:'fire-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mouseover', $.proxy(function(e) {
                 this._onMouseOver(e, this._getInputCoords(e) );
+                this.eventList.push({type:'fire-mouseover', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mouseout', $.proxy(function(e) {
                 this._onMouseOut(e, this._getInputCoords(e) );
-
+                this.eventList.push({type:'fire-mouseout', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             $('body').on('mouseup touchend', $.proxy(function(e) {
                 this.isDrawing = false;
+                this.eventList.push({type:'fire-body-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
             }, this));
         }
         else {
@@ -889,18 +900,17 @@ DrawingBoard.Board.prototype = {
             }, this));
 			//setInterval(function(){
 			setTimeout(function(){
-				var e = jQuery.Event( "fire-mousedown-touchstart", {which: 1, pageX:1000, pageY:800 } );
-				e.__proto__.which = 1, e.__proto__.pageX = 1000, e.__proto__.pageY = 800;
+				var e = $.Event( "fire-mousedown-touchstart", {pageX:400, pageY:400 } );
 				var canv = $("canvas");
-				canv.trigger('fire-mousedown-touchstart', e);
-				for(var x = 1000; x <= 1100; x++)
-					for(var y = 800; y <= 900; y++)
+				canv.trigger(e);
+				for(var x = 400; x <= 500; x++)
+					for(var y = 400; y <= 500; y++)
 					{
-						e = jQuery.Event( "fire-mousemove-touchmove", {which: 1, pageX:x, pageY:y } );
-						canv.trigger('fire-mousemove-touchmove', e);
+						e = jQuery.Event( "fire-mousemove-touchmove", {pageX:x, pageY:y } );
+						canv.trigger(e);
 					}
-				e = jQuery.Event( "fire-mouseup-touchend", {which: 1, pageX:1100, pageY:900 } );
-				canv.trigger('fire-mouseup-touchend', e);
+				e = jQuery.Event( "fire-mouseup-touchend", { pageX:1100, pageY:900 } );
+				//canv.trigger( e);
 			}, 100);
         }
 		if (window.requestAnimationFrame) requestAnimationFrame( $.proxy(this.draw, this) );

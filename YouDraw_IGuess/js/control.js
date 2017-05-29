@@ -11,6 +11,6 @@ function init() {
 		background: "#fff",
 		webStorage: 'session',
 		enlargeYourContainer: true,
-		localMouse: false
+		localMouse: true
 	});
 }
