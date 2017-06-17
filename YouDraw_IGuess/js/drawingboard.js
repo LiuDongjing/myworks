@@ -2,21 +2,21 @@
 * Copyright (c) 2015 Emmanuel Pelletier
 * Licensed MIT */
 (function() {
-	
+
 'use strict';
 
 /**
  * SimpleUndo is a very basic javascript undo/redo stack for managing histories of basically anything.
- * 
+ *
  * options are: {
  * 	* `provider` : required. a function to call on `save`, which should provide the current state of the historized object through the given "done" callback
  * 	* `maxLength` : the maximum number of items in history
  * 	* `opUpdate` : a function to call to notify of changes in history. Will be called on `save`, `undo`, `redo` and `clear`
  * }
- * 
+ *
  */
 var SimpleUndo = function(options) {
-	
+
 	var settings = options ? options : {};
 	var defaultOptions = {
 		provider: function() {
@@ -25,11 +25,11 @@ var SimpleUndo = function(options) {
 		maxLength: 30,
 		onUpdate: function() {}
 	};
-	
+
 	this.provider = (typeof settings.provider != 'undefined') ? settings.provider : defaultOptions.provider;
 	this.maxLength = (typeof settings.maxLength != 'undefined') ? settings.maxLength : defaultOptions.maxLength;
 	this.onUpdate = (typeof settings.onUpdate != 'undefined') ? settings.onUpdate : defaultOptions.onUpdate;
-	
+
 	this.initialItem = null;
 	this.clear();
 };
@@ -56,7 +56,7 @@ SimpleUndo.prototype.save = function() {
 	this.provider(function(current) {
 		truncate(this.stack, this.maxLength);
 		this.position = Math.min(this.position,this.stack.length - 1);
-		
+
 		this.stack = this.stack.slice(0, this.position + 1);
 		this.stack.push(current);
 		this.position++;
@@ -68,7 +68,7 @@ SimpleUndo.prototype.undo = function(callback) {
 	if (this.canUndo()) {
 		var item =  this.stack[--this.position];
 		this.onUpdate();
-		
+
 		if (callback) {
 			callback(item);
 		}
@@ -79,7 +79,7 @@ SimpleUndo.prototype.redo = function(callback) {
 	if (this.canRedo()) {
 		var item = this.stack[++this.position];
 		this.onUpdate();
-		
+
 		if (callback) {
 			callback(item);
 		}
@@ -837,12 +837,12 @@ DrawingBoard.Board.prototype = {
         if(this.opts.localMouse) {
             this.dom.$canvas.on('mousedown touchstart', $.proxy(function(e) {
                 this._onInputStart(e, this._getInputCoords(e) );
-                this.eventList.push({type:'fire-mousedown-touchstart', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({type:'fire-mousedown-touchstart', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mousemove touchmove', $.proxy(function(e) {
                 this._onInputMove(e, this._getInputCoords(e) );
-                this.eventList.push({type:'fire-mousemove-touchmove', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({type:'fire-mousemove-touchmove', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mousemove', $.proxy(function(e) {
@@ -851,22 +851,22 @@ DrawingBoard.Board.prototype = {
 
             this.dom.$canvas.on('mouseup touchend', $.proxy(function(e) {
                 this._onInputStop(e, this._getInputCoords(e) );
-                this.eventList.push({type:'fire-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({type:'fire-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mouseover', $.proxy(function(e) {
                 this._onMouseOver(e, this._getInputCoords(e) );
-                this.eventList.push({type:'fire-mouseover', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({type:'fire-mouseover', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mouseout', $.proxy(function(e) {
                 this._onMouseOut(e, this._getInputCoords(e) );
-                this.eventList.push({type:'fire-mouseout', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({type:'fire-mouseout', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             $('body').on('mouseup touchend', $.proxy(function(e) {
                 this.isDrawing = false;
-                this.eventList.push({type:'fire-body-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({type:'fire-body-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
             }, this));
         }
         else {
@@ -898,20 +898,6 @@ DrawingBoard.Board.prototype = {
             $('body').on('fire-body-mouseup-touchend', $.proxy(function(e) {
                 this.isDrawing = false;
             }, this));
-			//setInterval(function(){
-			setTimeout(function(){
-				var e = $.Event( "fire-mousedown-touchstart", {pageX:400, pageY:400 } );
-				var canv = $("canvas");
-				canv.trigger(e);
-				for(var x = 400; x <= 500; x++)
-					for(var y = 400; y <= 500; y++)
-					{
-						e = jQuery.Event( "fire-mousemove-touchmove", {pageX:x, pageY:y } );
-						canv.trigger(e);
-					}
-				e = jQuery.Event( "fire-mouseup-touchend", { pageX:1100, pageY:900 } );
-				//canv.trigger( e);
-			}, 100);
         }
 		if (window.requestAnimationFrame) requestAnimationFrame( $.proxy(this.draw, this) );
 	},

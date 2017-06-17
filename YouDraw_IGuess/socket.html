@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>你画我猜</title>
+  </head>
+  <body>
+    <p id="1">hello</p>
+	<script>
+    var socket = new WebSocket("ws://liudongjing.cn:10961", "tcp");
+    socket.onmessage = function (event) {
+        alert(event.data);
+    }
+    socket.onopen = function (event) {
+        //socket.send("I'm OK.");
+    }
+    
+    //socket.close();
+    </script>
+  </body>
+</html>
