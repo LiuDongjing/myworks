@@ -631,7 +631,10 @@ DrawingBoard.Board.prototype = {
 	downloadImg: function() {
 		var img = this.getImg();
 		img = img.replace("image/png", "image/octet-stream");
-		window.location.href = img;
+		var d = new Date();
+		var name = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+'-'+d.getHours()
+				+'-'+d.getMinutes()+".png";
+		download(name, img);
 	},
 
 
@@ -1064,6 +1067,7 @@ DrawingBoard.Control.extend = function(protoProps, staticProps) {
 	child.__super__ = parent.prototype;
 	return child;
 };
+//颜色控制面板
 DrawingBoard.Control.Color = DrawingBoard.Control.extend({
 	name: 'colors',
 
@@ -1074,6 +1078,7 @@ DrawingBoard.Control.Color = DrawingBoard.Control.extend({
 		this.$el.on('click', '.drawing-board-control-colors-picker', function(e) {
 			var color = $(this).attr('data-color');
 			that.board.setColor(color);
+			sendEvent({id:getSeq(), command:"setcolor", color:color});
 			that.$el.find('.drawing-board-control-colors-current')
 				.css('background-color', color)
 				.attr('data-color', color);
@@ -1191,6 +1196,7 @@ DrawingBoard.Control.DrawingMode = DrawingBoard.Control.extend({
 			if (mode !== value) this.prevMode = mode;
 			var newMode = mode === value ? this.prevMode : value;
 			this.board.setMode( newMode );
+			sendEvent({id:getSeq(), command:"setmode", mode:newMode});
 			e.preventDefault();
 		}, this));
 
@@ -1233,6 +1239,7 @@ DrawingBoard.Control.Navigation = DrawingBoard.Control.extend({
 			this.$el.on('click', '.drawing-board-control-navigation-back', $.proxy(function(e) {
 				this.board.goBackInHistory();
 				e.preventDefault();
+				sendEvent({id:getSeq(), command:"backward"});
 			}, this));
 
 			this.updateBack($back);
@@ -1244,6 +1251,7 @@ DrawingBoard.Control.Navigation = DrawingBoard.Control.extend({
 			this.$el.on('click', '.drawing-board-control-navigation-forward', $.proxy(function(e) {
 				this.board.goForthInHistory();
 				e.preventDefault();
+				sendEvent({id:getSeq(), command:"forward"});
 			}, this));
 
 			this.updateForward($forward);
@@ -1253,6 +1261,7 @@ DrawingBoard.Control.Navigation = DrawingBoard.Control.extend({
 			this.$el.on('click', '.drawing-board-control-navigation-reset', $.proxy(function(e) {
 				this.board.reset({ background: true });
 				e.preventDefault();
+				sendEvent({id:getSeq(), command:"reset"});
 			}, this));
 		}
 	},
@@ -1308,6 +1317,7 @@ DrawingBoard.Control.Size = DrawingBoard.Control.extend({
 				that.board.ev.trigger('size:changed', that.val);
 
 				e.preventDefault();
+				sendEvent({id:getSeq(), command:"setsize", size:that.val});
 			});
 		}
 
@@ -1323,6 +1333,7 @@ DrawingBoard.Control.Size = DrawingBoard.Control.extend({
 				that.board.ev.trigger('size:changed', that.val);
 
 				e.preventDefault();
+				sendEvent({id:getSeq(), command:"setsize", size:that.val});
 			});
 		}
 	},
