@@ -837,12 +837,12 @@ DrawingBoard.Board.prototype = {
         if(this.opts.localMouse) {
             this.dom.$canvas.on('mousedown touchstart', $.proxy(function(e) {
                 this._onInputStart(e, this._getInputCoords(e) );
-				sendEvent({type:'fire-mousedown-touchstart', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({id: getSeq(), type:'fire-mousedown-touchstart', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mousemove touchmove', $.proxy(function(e) {
                 this._onInputMove(e, this._getInputCoords(e) );
-				sendEvent({type:'fire-mousemove-touchmove', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({id: getSeq(), type:'fire-mousemove-touchmove', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mousemove', $.proxy(function(e) {
@@ -851,22 +851,22 @@ DrawingBoard.Board.prototype = {
 
             this.dom.$canvas.on('mouseup touchend', $.proxy(function(e) {
                 this._onInputStop(e, this._getInputCoords(e) );
-				sendEvent({type:'fire-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({id: getSeq(), type:'fire-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mouseover', $.proxy(function(e) {
                 this._onMouseOver(e, this._getInputCoords(e) );
-				sendEvent({type:'fire-mouseover', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({id: getSeq(), type:'fire-mouseover', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             this.dom.$canvas.on('mouseout', $.proxy(function(e) {
                 this._onMouseOut(e, this._getInputCoords(e) );
-				sendEvent({type:'fire-mouseout', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({id: getSeq(), type:'fire-mouseout', pageX:e.pageX, pageY:e.pageY});
             }, this));
 
             $('body').on('mouseup touchend', $.proxy(function(e) {
                 this.isDrawing = false;
-				sendEvent({type:'fire-body-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
+				sendEvent({id: getSeq(), type:'fire-body-mouseup-touchend', pageX:e.pageX, pageY:e.pageY});
             }, this));
         }
         else {

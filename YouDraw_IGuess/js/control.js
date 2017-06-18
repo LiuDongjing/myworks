@@ -1,4 +1,25 @@
+const MaxSeq = 1000000;
+var currentSeq = 0;
+var canvas;
 var socket = new WebSocket("ws://liudongjing.cn:10961", "tcp");
+function getSeq() {
+	var now = currentSeq;
+	currentSeq = (currentSeq + 1) % MaxSeq;
+	return now;
+}
+function triggerEvent(e) {
+	var e = $.Event(e.type, {pageX:e.pageX, pageY:e.pageY} );
+	canvas.trigger(e);
+	getSeq();
+}
+function delayEvent(e) {
+	if(currentSeq < e.id) {
+		setTimeout(delayEvent, e.id-currentSeq, e);
+	}
+	else {
+		setTimeout(triggerEvent, 0, e);
+	}
+}
 function init() {
 	var board = new DrawingBoard.Board('paint', {
 		controls: [
@@ -14,13 +35,11 @@ function init() {
 		enlargeYourContainer: true,
 		localMouse: localMouse
 	});
-	var canvas = $("canvas");
+	canvas = $("canvas");
 	if(!board.localMouse) {
 		socket.onmessage = function (event) {
-			console.log(event.data);
 		    var e = JSON.parse(event.data);
-			var e = $.Event(e.type, {pageX:e.pageX, pageY:e.pageY} );
-			canvas.trigger(e);
+			delayEvent(e);
 		}
 	}
 	var id;
@@ -37,4 +56,3 @@ function init() {
 function sendEvent(e) {
 	socket.send(JSON.stringify(e));
 }
-//setInterval(function(){
