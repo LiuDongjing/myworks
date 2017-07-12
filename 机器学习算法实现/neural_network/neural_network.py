@@ -67,14 +67,18 @@ class Layer(object):
           random_init: 是否用随机数初始化权重。
         """
         if random_init:
-            self.weight = np.matrix(np.random.rand(*shape))
+            self.weight = np.matrix(np.random.randn(*shape))
+            self.bias = np.matrix(np.random.randn(shape[1], 1)) #列向量
         else:
             self.weight = np.matrix(np.zeros(shape))
+            self.bias = np.matrix(np.zeros((shape[1], 1)))
         self.activation = ReLU()
         self.alpha = alpha
         self.epsilon = epsilon
+        self.eta = eta
         if alpha > 0:
-            self.prev_delta_weight = np.matrix(np.zeros(shape));
+            self.prev_delta_weight = np.matrix(np.zeros(shape))
+            self.prev_delta_bias = np.matrix(np.zeros((shape[1], 1)))
         
     def forward(self, Y):
         """
@@ -87,7 +91,7 @@ class Layer(object):
         Returns:
           本层网络的输出，是个二维矩阵，一行是一个样本，列数对应着本层网络的神经元个数。
         """
-        net = Y * self.weight
+        net = Y * self.weight + self.bias.T
         y_out = self.activation.forward(net)
         self.Y = Y
         return y_out
@@ -106,7 +110,9 @@ class Layer(object):
         """
         dot = np.multiply(delta, self.activation.backward())
         prev_delta = dot * self.weight.T
-        self.delta_weight = self.Y.T * dot;
+        #多个样本求和取平均值
+        self.delta_weight = self.Y.T * dot / dot.shape[0];
+        self.delta_bias = delta.T.mean(1)
         return prev_delta
         
     def update(self):
@@ -114,11 +120,15 @@ class Layer(object):
         更新权重。
         """
         self.weight -= self.eta * self.delta_weight
+        self.bias -= self.eta * self.delta_bias
         if self.alpha > 0:
             self.weight -= self.alpha * self.prev_delta_weight
             self.prev_delta_weight = self.delta_weight
+            self.bias -= self.alpha * self.prev_delta_bias
+            self.prev_delta_bias = self.delta_bias
         if self.epsilon > 0:
             self.weight = (1 - self.epsilon) * self.weight
+            self.bias = (1 - self.epsilon) * self.bias
             
 class Loss(object):
     """
@@ -153,7 +163,8 @@ class SoftmaxLoss(Loss):
     softmax loss。
     """
     def fordward(self, data):
-        c = np.repeat(np.max(data, 1), data.shape[1], 1)
+        c = (np.max(data, 1) + np.min(data, 1))/2;
+        c = np.repeat(c, data.shape[1], 1)
         data -= c
         data = np.exp(data)
         s = np.repeat(np.sum(data, 1), data.shape[1], 1)
@@ -181,7 +192,7 @@ class Network(object):
         """
         layers = []
         for k in range(1, len(dims)):
-            layers.append(Layer((dims[k-1], dims[k])))
+            layers.append(Layer((dims[k-1], dims[k]), alpha=0.9, epsilon=0.1))
         self.layers = layers
         self.loss = SoftmaxLoss()
         
@@ -270,6 +281,21 @@ def check_algorithm(epsilon=1e-4):
     k = 0
     for layer in net.layers:
         k += 1
+        # 检查bias
+        for i in range(layer.bias.shape[0]):
+            layer.bias[i, 0] += epsilon
+            loss_plus = net.forward(x, y)
+            layer.bias[i, 0] -= 2*epsilon
+            loss_minus = net.forward(x, y)
+            delta = layer.delta_bias[i, 0]
+            delta_calc = (loss_plus - loss_minus)/(2*epsilon)
+            if abs(delta - delta_calc) < 1e-4:
+                print('Layer%d_Bias_%d: %f(delta), %f(delta_calc), pass.'%
+                    (k, i, delta, delta_calc))
+            else:
+                print('Layer%d_Bias_%d: %f(delta), %f(delta_calc), fail.'%
+                    (k, i, delta, delta_calc), file=sys.stderr)
+        # 检查weight
         for i in range(layer.weight.shape[0]):
             for j in range(layer.weight.shape[1]):
                 layer.weight[i, j] += epsilon
