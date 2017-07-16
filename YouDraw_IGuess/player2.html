@@ -68,7 +68,8 @@
     <script src="js/bootstrap.min.js"></script>
 	<script src="js/control.js"></script>
 	<script>
-    var localMouse = false;
-    $(document).ready(init);</script>
+    let password = '2017';
+    let socket = new WebSocket("ws://liudongjing.cn:10961", "tcp");
+    $(document).ready(validate);</script>
   </body>
 </html>

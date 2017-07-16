@@ -1,13 +1,13 @@
-const MaxSeq = 1000000;
-var currentSeq = 0;
-var canvas, board;
-var socket = new WebSocket("ws://liudongjing.cn:10961", "tcp");
+const MAX_SEQ = 1000000;
+let currentSeq = 0;
+let canvas, board;
+let localMouse = true;
 function download(filename, img) {
-    var pom = document.createElement('a');
+    let pom = document.createElement('a');
     pom.setAttribute('href', img);
     pom.setAttribute('download', filename);
     if (document.createEvent) {
-        var event = document.createEvent('MouseEvents');
+        let event = document.createEvent('MouseEvents');
         event.initEvent('click', true, true);
         pom.dispatchEvent(event);
     }
@@ -16,14 +16,14 @@ function download(filename, img) {
     }
 }
 function getSeq() {
-	var now = currentSeq;
-	currentSeq = (currentSeq + 1) % MaxSeq;
+	let now = currentSeq;
+	currentSeq = (currentSeq + 1) % MAX_SEQ;
 	return now;
 }
 function triggerEvent(e) {
 	if(e.command === undefined) {
-		var e = $.Event(e.type, {pageX:e.pageX, pageY:e.pageY} );
-		canvas.trigger(e);
+		let t = $.Event(e.type, {pageX:e.pageX, pageY:e.pageY} );
+		canvas.trigger(t);
 	}
 	else {
 		if(e.command === "setcolor") {
@@ -86,21 +86,29 @@ function init() {
 	canvas = $("canvas");
 	if(!board.localMouse) {
 		socket.onmessage = function (event) {
-		    var e = JSON.parse(event.data);
-			delayEvent(e);
+		    let e = JSON.parse(event.data);
+        delayEvent(e);
 		}
-	}
-	var id;
-	if(localMouse) {
-		id = 'producer';
-	}
-	else {
-		id = 'consumer';
-	}
-	socket.onopen = function (event) {
-		socket.send(id);
 	}
 }
 function sendEvent(e) {
 	socket.send(JSON.stringify(e));
+}
+function validate() {
+  socket.onopen = (event) => {
+    socket.send(JSON.stringify({'password':password}));
+  }
+  socket.onmessage = (event) => {
+    let e = JSON.parse(event.data);
+    if(e.command === 'sucess') {
+      localMouse = e.role === 'producer';
+      setTimeout(init);
+    }
+    else if (e.command === 'error'){
+      alert(e.data);
+    }
+    else {
+      alert('数据传输错误！');
+    }
+  }
 }
