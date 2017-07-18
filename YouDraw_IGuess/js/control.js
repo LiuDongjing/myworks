@@ -100,15 +100,16 @@ function validate() {
   }
   socket.onmessage = (event) => {
     let e = JSON.parse(event.data);
+    console.log(e);
     if(e.command === 'sucess') {
       localMouse = e.role === 'producer';
-      setTimeout(init);
+      init();
     }
     else if (e.command === 'error'){
       alert(e.data);
     }
     else {
-      alert('数据传输错误！');
+      console.log('数据传输错误！');
     }
   }
 }
