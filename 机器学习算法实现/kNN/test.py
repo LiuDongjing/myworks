@@ -8,8 +8,8 @@ import numpy as np
 from sklearn.datasets import fetch_mldata
 from sklearn.model_selection import train_test_split
 from knearest_neighbors import KNearestNeighbors
-CLASSFIER = False
-if CLASSFIER:
+CLASSIFIER = True
+if CLASSIFIER:
     iris = fetch_mldata('iris', data_home='../datasets/iris')
     X_train, X_test, y_train, y_test = train_test_split(
         iris.data, iris.target)

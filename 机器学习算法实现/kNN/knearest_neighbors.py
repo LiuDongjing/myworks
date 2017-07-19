@@ -153,7 +153,7 @@ class KNearestNeighbors(object):
         if node == None:
             return
         dist = distance_norm2(self._x[node.index], x)
-        self._insert_neighbor(node.index, dist)
+        self._neighbors_dist = self._insert_neighbor(node.index, dist)
         if x[node.split] <= self._x[node.index, node.split]:
             self._search_tree(node.left, x)
         else:
@@ -168,3 +168,15 @@ class KNearestNeighbors(object):
         else:
             self._search_tree(node.left, x)
             
+def _test():
+    # 参考http://blog.csdn.net/likika2012/article/details/39619687
+    test_feature = np.array([[2,3],[5,4],[9,6],[4,7],[8,1],[7,2]])
+    test_label = np.random.choice([0,1], [test_feature.shape[0],])
+    model = KNearestNeighbors(k=1)
+    model.fit(test_feature, test_label)
+    # 第一个查询点不存在剪枝失败的情况，而第二个存在
+    X = np.array([[2.1,3.1],[2,4.5]])
+    model.predict(X)
+    
+if __name__ == '__main__':
+    _test()
