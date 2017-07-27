@@ -2,7 +2,9 @@
 #include <vector>
 using namespace std;
 int main() {
+#ifdef _DEBUG
 	freopen("spoj_binary_search.txt", "r", stdin);
+#endif
 	int n, q;
 	cin >> n >> q;
 	vector<int> data(n);
@@ -22,11 +24,17 @@ int main() {
 				high = m;
 			}
 			else {
-				index = m;
-				break;
+				if (m - 1 >= 0 && data[m - 1] == e) {
+					//不是第一次出现
+					high = m;
+				}
+				else {
+					index = m;
+					break;
+				}
 			}
 		}
-		cout << index << endl;
+		cout << index << endl << endl;
 	}
 	return 0;
 }
