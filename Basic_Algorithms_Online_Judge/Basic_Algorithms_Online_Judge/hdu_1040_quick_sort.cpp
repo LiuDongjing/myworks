@@ -8,18 +8,19 @@ using namespace std;
 int partition(vector<int> &data, int start, int end) {
 	int index = start + rand() % (end - start);
 	int val = data[index];
-	swap(data[index], data[end - 1]);
-	int i = start, j = end - 2;
-	while (i < j) {
-		for (; i < end-1 && data[i] <= val; i++);
-		for (; j >= 0 && data[j] > val; j--);
-		if (i < j) swap(data[i++], data[j--]);
+	swap(data[index], data[end-1]);
+	int low_bnd = start;
+	for (int i = start; i < end-1; i++) {
+		if (data[i] <= val) {
+			if (low_bnd != i) swap(data[low_bnd], data[i]);
+			low_bnd++;
+		}
 	}
-	swap(data[i], data[end - 1]);
-	return i;
+	swap(data[low_bnd], data[end - 1]);
+	return low_bnd;
 }
 void quick_sort(vector<int> &data, int start, int end) {
-	if (start >= end) return;
+	if (start >= end-1) return;
 	int split = partition(data, start, end);
 	if (split - 1 > start)
 		quick_sort(data, start, split);
