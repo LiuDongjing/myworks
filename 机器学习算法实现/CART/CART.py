@@ -33,7 +33,7 @@ def _gini(labels):
       
     """
     _, freq = np.unique(labels, return_counts=True)
-    freq = freq // labels.size
+    freq = freq / labels.size
     return 1 - np.power(freq, 2).sum()
     
 def _square_error(truth, pred):
@@ -61,7 +61,7 @@ def _error_rate(truth, pred):
       错误率
     
     """
-    return (truth != pred).sum()//truth.size
+    return (truth != pred).sum()/truth.size
 
 class _Node(object):
     """
@@ -121,28 +121,55 @@ class _Node(object):
         self.leaf_loss = 0
         self.index = None
         if self.left or self.right:
-            self.split_feature = -1
-            self.split_value = None
+            #self.split_feature = -1
+            #self.split_value = None
             self.label = None
             if self.left:
                 self.left.purify()
             if self.right:
                 self.right.purify()
+
+    def print(self, sibling=False, indent=''):
+        """
+        将树打印出来
         
+        Args:
+          sibling: True或者False，该节点是否还有兄弟节点
+          indent: 缩进字符串
+        """
+        s = indent + '    '
+        #info = None
+        if self.left or self.right:
+            info = '[%d: %0.3f]'%(self.split_feature, self.split_value)
+        else:
+            info = '[label: %0.3f]'%(self.label)
+        if sibling:
+            print('%s├─%s'%(s, info))
+            s += '│'
+        else:
+            print('%s└─%s'%(s, info))
+        if self.left:
+            self.left.print(sibling=self.right is not None, indent=s)
+        if self.right:
+            self.right.print(indent=s)
+
 class CART(object):
     """
     Classfication And Regression Tree. 
     """
     
-    def __init__(self, regression=False, validation_percentage=0.2):
+    def __init__(self, regression=False, validation_percentage=0.2,
+                 debug=False):
         """
         构造函数
         
         Args:
           regression: True或者False，True对应着回归树，False对应着分类树
           validation_percentage: 剪枝的过程中，用于validation的数据占训练数据的百分比
+          debug: True或者False，是否打印训练过程中的信息
         """
         self.val_perc = validation_percentage
+        self.debug = debug
         if regression:
             # 样本标签的平均值作为叶节点的输出
             self._method = np.mean
@@ -172,6 +199,9 @@ class CART(object):
         index_train = np.setdiff1d(index_all, index_val)
         X_train = X[index_train]
         y_train = y[index_train]
+        if self.debug:
+            print('训练集: %d, 验证集: %d.'%(
+                index_train.shape[0], index_val.shape[0]))
         self._root = _Node(index=np.array([k for k in range(X_train.shape[0])]))
         
         # 宽度优先扩展CART，一直扩展到叶节点只有一个样本
@@ -199,8 +229,8 @@ class CART(object):
                     right = values > v
                     right_loss = self._loss(y_train[index[right]])
                     N = X_train.shape[0]
-                    loss = (left_loss*(left.sum()//N) + 
-                            right_loss*(right.sum()//N))
+                    loss = (left_loss*(left.sum()/N) + 
+                            right_loss*(right.sum()/N))
                     if loss < min_loss:
                         min_loss = loss
                         min_feature = feature
@@ -293,15 +323,15 @@ class CART(object):
         if root.left is not None:
             los, t = self._calc_alpha(root.left)
             T += t
-            loss += len(root.left.index)//len(root.index) * los
+            loss += len(root.left.index)/len(root.index) * los
         if root.right is not None:
             los, t = self._calc_alpha(root.right)
             T += t
-            loss += len(root.right.index)//len(root.index) * los
+            loss += len(root.right.index)/len(root.index) * los
         if T == 0:
             # 当前是叶节点
             return (root.leaf_loss, 1)
-        root.alpha = (root.leaf_loss - loss) // (T-1)
+        root.alpha = (root.leaf_loss - loss) / (T-1)
         # 寻找alpha值最小的节点
         if root.alpha < self._min_alpha:
             self._min_alpha = root.alpha
@@ -318,6 +348,9 @@ class CART(object):
           y: shape为(N,)的numpy.array，验证数据集的标签。
         """
         trees = [self._root]
+        if self.debug:
+            print('未剪枝前的CART：')
+            self._root.print()
         tree = self._root.copy()
         while tree and ((tree.left and (tree.left.left or tree.left.right)) or
             (tree.right and (tree.right.left or tree.right.right))):
@@ -344,3 +377,6 @@ class CART(object):
                 best_eval = eval_value
         self._root = best_tree
         self._root.purify()
+        if self.debug:
+            print('剪枝后的CART：')
+            self._root.print()
