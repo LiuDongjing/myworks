@@ -1,17 +1,20 @@
 #include <iostream>
 #include <vector>
+#include <exception>
 using namespace std;
+//huffman树节点
 class Node {
 public:
 	Node(int c, int v=-1) {
 		count = c;
 		value = v;
 	}
-	int count = 0;
-	int value= -1;
+	int count = 0;//字符的频数
+	int value= -1;//字符索引
 	Node *left = nullptr;
 	Node *right = nullptr;
 };
+//插入排序链表节点
 class ListNode {
 public:
 	ListNode(Node * v){
@@ -20,7 +23,7 @@ public:
 	Node *value = nullptr;
 	ListNode *next = nullptr;
 };
-//从小到大排序
+//按count从小到大排序
 void insertion_sort(ListNode* &head, Node *v) {
 	if (v == nullptr) return;
 	ListNode* t = new ListNode(v);
@@ -28,14 +31,14 @@ void insertion_sort(ListNode* &head, Node *v) {
 		head = t;
 		return;
 	}
-	if (head->value->value > v->value) {
+	if (head->value->count > v->count) {
 		t->next = head;
 		head = t;
 		return;
 	}
 	ListNode *prev = head, *next = head->next;
 	for (; next != nullptr; prev=prev->next, next=next->next) {
-		if (next->value->value > v->value) {
+		if (next->value->count > v->count) {
 			t->next = next;
 			prev->next = t;
 			return;
@@ -43,9 +46,23 @@ void insertion_sort(ListNode* &head, Node *v) {
 	}
 	prev->next = t;
 }
+// 统计huffman编码需要的bit数
+void sum_bits(const Node* head, int &sum, int height = 0) {
+	if (head == nullptr) return;
+	if (head->left == nullptr && head->right == nullptr) {
+		sum += height*head->count;
+		return;
+	}
+	if (head->left != nullptr) sum_bits(head->left, sum, height + 1);
+	if (head->right != nullptr) sum_bits(head->right, sum, height + 1);
+}
 int main() {
-	string str;
-	while (scanf("%s", &str) > 0) {
+#ifdef _DEBUG
+	freopen("hdu_1053_huffman.txt", "r", stdin);
+#endif
+	char buf[1024];
+	while (scanf("%s", buf) > 0) {
+		string str = buf;
 		if (str == "END") {
 			break;
 		}
@@ -53,6 +70,7 @@ int main() {
 		for (int i = 0; i < str.size(); i++) {
 			data[str[i] - 'A']++;
 		}
+		//初始的树列表，从小到大排序
 		ListNode *head = nullptr;
 		for (int i = 0; i < data.size(); i++) {
 			if (data[i] > 0) {
@@ -60,6 +78,7 @@ int main() {
 				insertion_sort(head, t);
 			}
 		}
+		//合并树
 		while (head != nullptr && head->next != nullptr) {
 			Node *n1 = head->value;
 			Node *n2 = head->next->value;
@@ -76,6 +95,9 @@ int main() {
 			throw runtime_error("链表头为空!");
 		}
 		Node *huffman = head->value;
+		int sum = 0;
+		sum_bits(huffman, sum);
+		printf("%d %d %.1f\n", 8*str.size(), sum, 8*str.size() / float(sum));
 	}
 	return 0;
 }
