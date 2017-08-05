@@ -97,6 +97,7 @@ int main() {
 		Node *huffman = head->value;
 		int sum = 0;
 		sum_bits(huffman, sum);
+		if (sum == 0) sum = head->value->count; //当所有字符都一样时，字符用1 bit编码
 		printf("%d %d %.1f\n", 8*str.size(), sum, 8*str.size() / float(sum));
 	}
 	return 0;
