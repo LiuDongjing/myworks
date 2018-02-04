@@ -4,6 +4,9 @@ import tensorflow as tf
 import skimage.io
 from tensorflow.examples.tutorials.mnist import input_data
 
+def leaky_relu(feature, alpha=0.2):
+    return tf.maximum(alpha * feature, feature)
+
 def weight_variable(shape):
     """
     生成weight variable
@@ -46,9 +49,24 @@ def conv2d(features, filters, stride=1, padding='VALID'):
     return tf.nn.conv2d(features, filters, strides=(1,stride,stride,1), 
                         padding='VALID')
 
+def batch_norm_variable(depth, name):
+    offset = tf.Variable(tf.truncated_normal((depth, ), mean=1, stddev=1.0), name='%s_beta'%name)
+    scale = tf.Variable(tf.truncated_normal((depth, ), mean=0.0, stddev=1.0), name='%s_gamma'%name)
+    return offset, scale
+
 def batch_normalization(features, offset, scale):
-    mean, var = tf.nn.moments(features, axes=[0])
-    return tf.nn.batch_normalization(features, mean, var, offset, scale, 1e-6)
+    mean = tf.reduce_mean(features, axis=0)
+    var = features-mean
+    var = tf.reduce_mean(var*var, axis=0)
+    #mean, var = tf.nn.moments(features, axes=[0])
+    x = (features-mean)/(tf.sqrt(var+1e-6))
+    return scale*x+offset
+
+def official_bn(features, name):
+    v = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, name)
+    x = tf.layers.batch_normalization(features, name=name, training=True,
+                                      reuse=True if len(v)>0 else False)
+    return v, x
 
 def get_block_variable(shape):
     w = weight_variable(shape)
@@ -88,6 +106,110 @@ class Generator(object):
                 x = tf.nn.relu(x)
         x = tf.nn.sigmoid(x)
         return x
+        
+    def summary(self):
+        count = 0
+        for v in self.var_list:
+            shape = v.get_shape().as_list()
+            count += np.prod(shape)
+        print()
+        print('Total parameter: %d.'%count)
+        print()
+
+class PerceptronDiscriminator(object):
+    
+    def __init__(self):
+        self.w1 = tf.get_variable('d_w1', shape=(784, 128),
+                                  initializer=
+                                  #tf.contrib.layers.xavier_initializer()
+                                  tf.random_normal_initializer()
+                                  )
+        self.b1 = tf.get_variable('d_b1', shape=(128,),
+                                  initializer=
+                                  #tf.contrib.layers.xavier_initializer()
+                                  tf.random_normal_initializer()
+                                  )
+        #self.bn1_o, self.bn1_s = batch_norm_variable(128, 'bn_1')
+        self.w2 = tf.get_variable('d_w2', shape=(128, 1),
+                                  initializer=
+                                  #tf.contrib.layers.xavier_initializer()
+                                  tf.random_normal_initializer()
+                                  )
+        self.b2 = tf.get_variable('d_b2', shape=(1,),
+                                  initializer=
+                                  #tf.contrib.layers.xavier_initializer()
+                                  tf.random_normal_initializer()
+                                  )
+        #self.bn2_o, self.bn2_s = batch_norm_variable(1, 'bn_2')
+        self.var_list = [self.w1, self.b1, #self.bn1_o, self.bn1_s, 
+                         self.w2, self.b2#, self.bn2_o, self.bn2_s
+                         ]
+        
+    def __call__(self, img, name):
+        x = tf.reshape(img, (-1, 784))
+        with tf.name_scope(name):
+            x = tf.matmul(x, self.w1) + self.b1
+            #x = batch_normalization(x, self.bn1_o, self.bn1_s)
+            x = leaky_relu(x)
+            #lst, x = official_bn(x, 'd_bn_1')
+            #self.var_list += lst
+            x = tf.matmul(x, self.w2) + self.b2
+            x = leaky_relu(x)
+            #lst, x = official_bn(x, 'd_bn_2')
+            #self.var_list += lst
+            #x = batch_normalization(x, self.bn2_o, self.bn2_s)
+            x = tf.nn.sigmoid(x)
+        
+        return x
+
+    def summary(self):
+        count = 0
+        for v in self.var_list:
+            shape = v.get_shape().as_list()
+            count += np.prod(shape)
+        print()
+        print('Total parameter: %d.'%count)
+        print()
+
+class PerceptronGenerator(object):
+    
+    def __init__(self, rand_chan):
+        self.w1 = tf.get_variable('g_w1', shape=(rand_chan, 128),
+                                  initializer=tf.contrib.layers.xavier_initializer())
+        self.b1 = tf.get_variable('g_b1', shape=(128,),
+                                  initializer=tf.contrib.layers.xavier_initializer())
+        #self.bn1_o, self.bn1_s = batch_norm_variable(128)
+        self.w2 = tf.get_variable('g_w2', shape=(128, 784),
+                                  initializer=tf.contrib.layers.xavier_initializer())
+        self.b2 = tf.get_variable('g_b2', shape=(784,),
+                                  initializer=tf.contrib.layers.xavier_initializer())
+        #self.bn2_o, self.bn2_s = batch_norm_variable(784, 'g_bn_2')
+        self.var_list = [self.w1, self.b1, #self.bn1_o, self.bn1_s, 
+                         self.w2, self.b2#, self.bn2_o, self.bn2_s
+                         ]
+        self.rand_chan = rand_chan
+        
+    def __call__(self, img):
+        assert self.rand_chan == img.get_shape().as_list()[-1]
+        x = img
+        with tf.name_scope('generator'):
+            x = tf.matmul(x, self.w1) + self.b1
+            #x = batch_normalization(x, self.bn1_o, self.bn1_s)
+            x = leaky_relu(x)
+            x = tf.matmul(x, self.w2) + self.b2
+            #x = batch_normalization(x, self.bn2_o, self.bn2_s)
+            x = tf.nn.sigmoid(x)
+            x = tf.reshape(x, (-1, 28, 28, 1))
+        return x
+        
+    def summary(self):
+        count = 0
+        for v in self.var_list:
+            shape = v.get_shape().as_list()
+            count += np.prod(shape)
+        print()
+        print('Total parameter: %d.'%count)
+        print()
 
 class Discriminator(object):
     
@@ -101,6 +223,15 @@ class Discriminator(object):
         self.conv4 = get_block_variable((2,2,64,1))
         self.var_list = (self.conv1 + self.conv2 + self.conv3 + self.conv4 +
                     self.res_conv1 + self.res_conv2 + self.res_conv3)
+
+    def summary(self):
+        count = 0
+        for v in self.var_list:
+            shape = v.get_shape().as_list()
+            count += np.prod(shape)
+        print()
+        print('Total parameter: %d.'%count)
+        print()
 
     def __call__(self, img, name):
         x = img
@@ -169,28 +300,35 @@ def main():
     # tf.reshape(x, [-1, 28, 28, 1])，mnist图片拉成行向量了，需要reshape。
     
     mnist = input_data.read_data_sets('mnist', one_hot=False)
-    batch_size = 512
+    batch_size = 100
     epoch = 100
     disc_step = 1
     iter_num = mnist.train.num_examples // batch_size
 
     save_mnist_img(mnist.test.images[:100], 'test.jpg')
     
-    rand_chan = 64
+    rand_chan = 128
     rand_num = tf.placeholder(tf.float32, shape=(None, rand_chan))
     img = tf.placeholder(tf.float32, shape=(None, 28, 28, 1))
 
-    generator = Generator(rand_chan)
+    generator = PerceptronGenerator(rand_chan)
     G = generator(rand_num)
     
-    discriminator = Discriminator()
+    discriminator = PerceptronDiscriminator()
     true_D = discriminator(img, 'true')
     fake_D = discriminator(G, 'fake')
     
+    print('Generator:')
+    generator.summary()
+    
+    print('Discriminator:')
+    
+    discriminator.summary()
+
     d_loss = -tf.reduce_mean(tf.log(true_D) + tf.log(1-fake_D))#趋向于0
     g_loss = -tf.reduce_mean(tf.log(fake_D)) #g_loss趋向于0
-    d_opt = tf.train.MomentumOptimizer(1e-4, 0.9)
-    g_opt = tf.train.MomentumOptimizer(1e-2, 0.9)
+    d_opt = tf.train.AdamOptimizer(learning_rate=1e-3)
+    g_opt = tf.train.AdamOptimizer(learning_rate=1e-3)
     d_update = d_opt.minimize(d_loss, var_list=discriminator.var_list)
     g_update = g_opt.minimize(g_loss, var_list=generator.var_list)
     with tf.Session() as sess:
@@ -208,6 +346,11 @@ def main():
                 sess.run(g_update, feed_dict={ rand_num:rands})
                 sys.stdout.write(', g loss: %f.\n'%(g_loss.eval(feed_dict={
                     rand_num:rands})))
+                #tt = list(map(lambda x:'%s:%f~%f;'%(x.name, x.eval().min(), x.eval().max()), discriminator.var_list))
+                #ss = ''
+                #for s in tt:
+                #    ss += s
+                #print(ss)
             fake_img = G.eval(feed_dict={
                             rand_num:np.random.standard_normal((10*10,rand_chan))})
             save_mnist_img(fake_img, 'epoch-%d.jpg'%e)
