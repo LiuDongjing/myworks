@@ -6,15 +6,15 @@ int main() {
 	freopen("spoj_binary_search.txt", "r", stdin);
 #endif
 	int n, q;
-	cin >> n >> q;
+	scanf("%d%d", &n, &q);
 	vector<int> data(n);
 	for (int i = 0; i < n; i++)
-		cin >> data[i];
+		scanf("%d", &data[i]);
 	for (int i = 0; i < q; i++) {
 		int e;
 		int index = -1;
 		int low = 0, high = n;
-		cin >> e;
+		scanf("%d", &e);
 		while (low < high) {
 			int m = (low + high) / 2;
 			if (data[m] < e) {
@@ -24,17 +24,11 @@ int main() {
 				high = m;
 			}
 			else {
-				if (m - 1 >= 0 && data[m - 1] == e) {
-					//不是第一次出现
-					high = m;
-				}
-				else {
-					index = m;
-					break;
-				}
+				high = m;
+				index = m;
 			}
 		}
-		cout << index << endl << endl;
+		printf("%d\n", index);
 	}
 	return 0;
 }
