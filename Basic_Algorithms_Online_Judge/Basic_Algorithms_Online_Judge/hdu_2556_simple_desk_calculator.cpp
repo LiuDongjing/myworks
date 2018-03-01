@@ -8,9 +8,10 @@ using namespace std;
 bool next_num(const string &str, bool &is_int, int &s, float &num) {
 	num = 0;
 	is_int = true;
-	if (str[s] == '.' &&
-		(s + 1 >= str.size() ||
-		str[s + 1] < '0' || str[s + 1] > '9')) {
+	if (str[s] == '.'//类似.134和.0的，是不合格式的
+		//&&(s + 1 >= str.size() ||
+		//str[s + 1] < '0' || str[s + 1] > '9')
+		) {
 		//对应着'.'开头的非法格式
 		return false;
 	}
@@ -21,6 +22,13 @@ bool next_num(const string &str, bool &is_int, int &s, float &num) {
 	}
 	if (str[s] == '.') {
 		s++;
+		if (s >= str.size()
+			|| str[s] < '0'
+			|| str[s] > '9')
+		{
+			//类似12.和0.的也不满足格式
+			return false;
+		}
 		is_int = false;
 		float w = 10;
 		for (; s < str.size() && '0' <= str[s] && str[s] <= '9';
@@ -134,7 +142,7 @@ bool eval_infix(vector<Node> &infix, float &val) {
 bool suffix2infix(vector<Node> &infix, string &exp) {
 	stack<char> stk;
 	int i = 0;
-	int factor = 1;
+	//int factor = 1;不考虑正负号
 	while (i < exp.size()) {
 		char c = exp[i];
 		Node t;
@@ -144,14 +152,14 @@ bool suffix2infix(vector<Node> &infix, string &exp) {
 			if (next_num(exp, is_int, i, num)) {
 				if (is_int) {
 					t.type = 0;
-					t.data.idat = int(factor*num);
+					t.data.idat = int(/*factor**/num);
 				}
 				else {
 					t.type = 1;
-					t.data.fdat = factor*num;
+					t.data.fdat = /*factor**/num;
 				}
 				infix.push_back(t);
-				factor = 1;
+				//factor = 1;
 			}
 			else {
 				return false;
@@ -162,9 +170,9 @@ bool suffix2infix(vector<Node> &infix, string &exp) {
 			stk.push(c);
 		}
 		else if (c == ')') {
-			if (i - 1 >= 0 && exp[i - 1] == '(') {
+			/*if (i - 1 >= 0 && exp[i - 1] == '(') {
 				return false;//配对的空括号
-			}
+			}不考虑这种情况*/
 			bool match = false;
 			while (!stk.empty()) {
 				char x = stk.top();
@@ -182,7 +190,7 @@ bool suffix2infix(vector<Node> &infix, string &exp) {
 			}
 		}
 		else if (c == '+' || c == '-') {
-			if ((i == 0 || exp[i - 1] == '(')) {
+			/*if ((i == 0 || exp[i - 1] == '(')) {
 				if (i + 1 >= exp.size()) {
 					return false;
 				}
@@ -195,7 +203,7 @@ bool suffix2infix(vector<Node> &infix, string &exp) {
 					i++;
 					continue;
 				}
-			}
+			}*/
 			while (!stk.empty()) {
 				char &x = stk.top();
 				if (x == '(') {
