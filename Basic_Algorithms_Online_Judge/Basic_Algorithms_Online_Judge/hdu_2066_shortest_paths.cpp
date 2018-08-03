@@ -47,6 +47,36 @@ int dijkstra(vector<int> &src, vector<int>&des) {
 	}
 	return min_dis;
 }
+int floyd(vector<int>&src, vector<int> &des) {
+	vector < vector<int> > d1 = mat, d2 = mat;
+	vector<vector<int>> *prev = &d1, *curr = &d2;
+	for (int k = 1; k <= n; k++) {
+		for (int i = 1; i <= n; i++) {
+			for (int j = i + 1; j <= n; j++) {
+				int t = -1;
+				if ((*prev)[i][k] >= 0 && (*curr)[k][j] >= 0) {
+					t = (*prev)[i][k] + (*curr)[k][j];
+				}
+				if (t >= 0 && ((*prev)[i][j] < 0 || (*prev)[i][j] > t)) {
+					(*curr)[i][j] = t;
+					(*curr)[j][i] = t;
+				}
+				else {
+					(*curr)[i][j] = (*curr)[j][i] = (*prev)[i][j];
+				}
+			}
+		}
+		swap(curr, prev);
+	}
+	int min_dis = -1;
+	for (int i = 0; i < src.size(); i++) {
+		for (int j = 0; j < des.size(); j++) {
+			int t = (*prev)[src[i]][des[j]];
+			if (t >= 0 && (min_dis < 0 || min_dis > t)) min_dis = t;
+		}
+	}
+	return min_dis;
+}
 int main() {
 	int t, s, d;
 	while (0 < scanf("%d%d%d", &t, &s, &d)) {
@@ -63,7 +93,7 @@ int main() {
 		vector<int> src(s), des(d);
 		for (int i = 0; i < s; i++) scanf("%d", &src[i]);
 		for (int i = 0; i < d; i++) scanf("%d", &des[i]);
-		printf("%d\n", dijkstra(src, des));
+		printf("%d\n", floyd(src, des));
 	}
 	return 0;
 }
