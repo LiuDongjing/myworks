@@ -19,23 +19,13 @@ public:
 };
 int dijkstra(vector<Vertex> &at, int n, int src, int &dt, vector<int> &dv) {
 	vector<bool> mark(n + 1, true);
-	//根据src初始化邻接表
-	for (int i = 1; i <= n; i++) {
-		at[i].dis = -1;
-		if (at[i].index > 0) at[i].pre = -1;
-	}
-	for (int i = 0; i < at[src].nodes.size(); i++) {
-		at[at[src].nodes[i]].dis = at[src].weights[i];
-		at[at[src].nodes[i]].pre = src;
-	}
-	at[src].dis = 0;
 	mark[src] = false;
 	int md = 1;
-	while (md > 0) {
+	while (md >= 0) {
 		md = -1;
 		int ind = -1;
-		for (int i = 1; i <= n; i++) {
-			if (at[i].index > 0 && mark[i] && (md < 0 || at[i].dis > 0 && md > at[i].dis)) {
+		for (int i = 0; i <= n; i++) {
+			if (at[i].index > 0 && mark[i] && (md < 0 || at[i].dis >= 0 && md > at[i].dis)) {
 				ind = i;
 				md = at[i].dis;
 			}
@@ -44,7 +34,7 @@ int dijkstra(vector<Vertex> &at, int n, int src, int &dt, vector<int> &dv) {
 			mark[ind] = false;
 			for (int i = 0; i < at[ind].nodes.size(); i++) {
 				int t = at[ind].dis + at[ind].weights[i];
-				if (at[at[ind].nodes[i]].dis < 0 || at[at[ind].nodes[i]].dis > t) {
+				if (mark[at[ind].nodes[i]]&& (at[at[ind].nodes[i]].dis < 0 || at[at[ind].nodes[i]].dis > t)) {
 					at[at[ind].nodes[i]].dis = t;
 					at[at[ind].nodes[i]].pre = ind;
 				}
@@ -75,25 +65,24 @@ void print_path(vector<Vertex> &at, int src, int des) {
 	}
 }
 int dijkstra_multi_src(vector<Vertex> &at, int n, vector<int> &sv, vector<int> &dv) {
-	int mt = -1, dd, st;
-	vector<Vertex> atb;
+	at[0].dis = 0;
 	for (int i = 0; i < sv.size(); i++) {
-		int dt;
-		int t = dijkstra(at, n, sv[i], dt, dv);
-		if (mt < 0 || (t >= 0 && t < mt)) {
-			mt = t;
-			dd = dt;
-			st = sv[i];
-			atb = at;
-		}
+		at[0].nodes.push_back(sv[i]);
+		at[0].weights.push_back(0);
+		at[sv[i]].dis = 0;
+		at[sv[i]].pre = 0;
+		at[sv[i]].nodes.push_back(0);
+		at[sv[i]].weights.push_back(0);
 	}
+	int dt;
+	int t = dijkstra(at, n, 0, dt, dv);
 	//print_path(atb, st, dd);
 	//cout << endl;
-	return mt;
+	return t;
 }
 
 void reset(vector<Vertex> &at, int n) {
-	for (int i = 1; i <= n; i++) {
+	for (int i = 0; i <= n; i++) {
 		at[i] = Vertex();
 	}
 }
@@ -204,6 +193,24 @@ int main() {
 	return 0;
 }
 #endif
+void add_edge(vector<Vertex> &at, int a, int b, int t) {
+	int hit = -1;
+	for (int i = 0; i < at[a].nodes.size(); i++) {
+		if (at[a].nodes[i] == b) {
+			hit = i;
+			break;
+		}
+	}
+	if (hit >= 0) {
+		if (at[a].weights[hit] > t) {
+			at[a].weights[hit] = t;
+		}
+	}
+	else {
+		at[a].nodes.push_back(b);
+		at[a].weights.push_back(t);
+	}
+}
 int main() {
 #ifdef _DEBUG
 	freopen("hdu_2066_shortest_paths.txt", "r", stdin);
@@ -219,10 +226,8 @@ int main() {
 			scanf("%d%d%d", &a, &b, &ti);
 			at[a].index = a;
 			at[b].index = b;
-			at[a].nodes.push_back(b);
-			at[a].weights.push_back(ti);
-			at[b].nodes.push_back(a);
-			at[b].weights.push_back(ti);
+			add_edge(at, a, b, ti);
+			add_edge(at, b, a, ti);
 			n = max(n, max(a, b));
 		}
 		vector<int> dv(d), sv(s);
